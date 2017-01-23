@@ -5,6 +5,7 @@ import com.ctre.CANTalon;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.IterativeRobot;
 import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.PowerDistributionPanel;
 import edu.wpi.first.wpilibj.RobotDrive;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -27,6 +28,7 @@ public class Robot extends IterativeRobot {
 	Joystick joy1, joy2;
 	Pneumatics pneumatics;
 	DoubleSolenoid shifter;
+	PowerDistributionPanel pdp;
 
 	/**
 	 * This function is run when the robot is first started up and should be
@@ -39,10 +41,10 @@ public class Robot extends IterativeRobot {
 		SmartDashboard.putData("Auto choices", chooser);
 		LFDrive = new CANTalon(0);
 		RFDrive = new CANTalon(1);
-		LMDrive = new CANTalon(2);
-		RMDrive = new CANTalon(3);
-		LBDrive = new CANTalon(4);
-		RBDrive = new CANTalon(5);
+		LMDrive = new CANTalon(4);
+		RMDrive = new CANTalon(5);
+		LBDrive = new CANTalon(2);
+		RBDrive = new CANTalon(3);
 		rightDrive = new BallShifter(RFDrive, RMDrive, RBDrive);
 		leftDrive = new BallShifter(LFDrive, LMDrive, LBDrive);
 		driveTrain = new RobotDrive(LFDrive, RFDrive);
@@ -50,6 +52,7 @@ public class Robot extends IterativeRobot {
 		joy2 = new Joystick(1);
 		pneumatics = new Pneumatics(0);
 		shifter = new DoubleSolenoid(0, 1);
+		pdp = new PowerDistributionPanel();
 	}
 
 	/**
@@ -99,6 +102,7 @@ public class Robot extends IterativeRobot {
 		} else if (joy1.getTrigger() == false) {
 			shifter.set(DoubleSolenoid.Value.kReverse);
 		}
+		System.out.println(pneumatics.compressor.enabled());
 
 	}
 

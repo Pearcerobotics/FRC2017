@@ -6,9 +6,10 @@ public class Pneumatics {
 
 	Compressor compressor;
 
-	public Pneumatics(int PCMID) {
-		compressor = new Compressor(PCMID);
+	public Pneumatics() {
+		compressor = new Compressor(0);
 		compressor.setClosedLoopControl(true);
+
 	}
 
 }

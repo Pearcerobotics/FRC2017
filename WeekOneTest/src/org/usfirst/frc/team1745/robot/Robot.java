@@ -1,6 +1,7 @@
 package org.usfirst.frc.team1745.robot;
 
-import com.ctre.CANTalon;
+import org.usfirst.frc.team1745.robot.P51Talon.Breakers;
+import org.usfirst.frc.team1745.robot.P51Talon.Motors;
 
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.IterativeRobot;
@@ -22,13 +23,14 @@ public class Robot extends IterativeRobot {
 	final String customAuto = "My Auto";
 	String autoSelected;
 	SendableChooser<String> chooser = new SendableChooser<String>();
-	CANTalon LFDrive, RFDrive, LMDrive, RMDrive, LBDrive, RBDrive;
+	P51Talon LFDrive, RFDrive, LMDrive, RMDrive, LBDrive, RBDrive;
 	RobotDrive driveTrain;
 	BallShifter rightDrive, leftDrive;
 	Joystick joy1, joy2;
-	Pneumatics pneumatics;
+	// Pneumatics pneumatics;
 	DoubleSolenoid shifter;
 	PowerDistributionPanel pdp;
+	boolean highGear;
 
 	/**
 	 * This function is run when the robot is first started up and should be
@@ -39,20 +41,20 @@ public class Robot extends IterativeRobot {
 		chooser.addDefault("Default Auto", defaultAuto);
 		chooser.addObject("My Auto", customAuto);
 		SmartDashboard.putData("Auto choices", chooser);
-		LFDrive = new CANTalon(0);
-		RFDrive = new CANTalon(1);
-		LMDrive = new CANTalon(4);
-		RMDrive = new CANTalon(5);
-		LBDrive = new CANTalon(2);
-		RBDrive = new CANTalon(3);
+		LFDrive = new P51Talon(0, "Forward Left Motor", Motors.CIM, Breakers.amp40, 15);
+		RFDrive = new P51Talon(1, "Forward Right Motor", Motors.CIM, Breakers.amp40, 14);
+		LMDrive = new P51Talon(4, "Middle Left Motor", Motors.CIM, Breakers.amp40, 1);
+		RMDrive = new P51Talon(5, "Middle Right Motor", Motors.CIM, Breakers.amp40, 0);
+		LBDrive = new P51Talon(2, "Back Left Motor", Motors.CIM, Breakers.amp40, 13);
+		RBDrive = new P51Talon(3, "Back Right Motor", Motors.CIM, Breakers.amp40, 12);
 		rightDrive = new BallShifter(RFDrive, RMDrive, RBDrive);
 		leftDrive = new BallShifter(LFDrive, LMDrive, LBDrive);
 		driveTrain = new RobotDrive(LFDrive, RFDrive);
 		joy1 = new Joystick(0);
 		joy2 = new Joystick(1);
-		pneumatics = new Pneumatics(0);
+		// pneumatics = new Pneumatics();
 		shifter = new DoubleSolenoid(0, 1);
-		pdp = new PowerDistributionPanel();
+		highGear = false;
 	}
 
 	/**
@@ -69,8 +71,7 @@ public class Robot extends IterativeRobot {
 	@Override
 	public void autonomousInit() {
 		autoSelected = chooser.getSelected();
-		// autoSelected = SmartDashboard.getString("Auto Selector",
-		// defaultAuto);
+		autoSelected = SmartDashboard.getString("Auto Selector", defaultAuto);
 		System.out.println("Auto selected: " + autoSelected);
 	}
 
@@ -90,6 +91,9 @@ public class Robot extends IterativeRobot {
 		}
 	}
 
+	public void teleopInit() {
+	}
+
 	/**
 	 * This function is called periodically during operator control
 	 */
@@ -99,10 +103,18 @@ public class Robot extends IterativeRobot {
 		driveTrain.tankDrive(joy1, joy2, true);
 		if (joy1.getTrigger() == true) {
 			shifter.set(DoubleSolenoid.Value.kForward);
+			highGear = true;
 		} else if (joy1.getTrigger() == false) {
 			shifter.set(DoubleSolenoid.Value.kReverse);
+			highGear = false;
 		}
-		System.out.println(pneumatics.compressor.enabled());
+
+		talonsToDashboard();
+		SmartDashboard.putBoolean("High Gear", highGear);
+		// SmartDashboard.putBoolean("Pressure Switch",
+		// pneumatics.compressor.getPressureSwitchValue());
+		// SmartDashboard.putBoolean("Compressor",
+		// pneumatics.compressor.enabled());
 
 	}
 
@@ -112,4 +124,10 @@ public class Robot extends IterativeRobot {
 	@Override
 	public void testPeriodic() {
 	}
+
+	public void talonsToDashboard() {
+		LFDrive.toDashboard();
+		RFDrive.toDashboard();
+	}
+
 }

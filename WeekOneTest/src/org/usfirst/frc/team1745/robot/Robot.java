@@ -1,8 +1,12 @@
 package org.usfirst.frc.team1745.robot;
 
+import org.opencv.core.Rect;
+import org.opencv.imgproc.Imgproc;
 import org.usfirst.frc.team1745.robot.P51Talon.Breakers;
 import org.usfirst.frc.team1745.robot.P51Talon.Motors;
 
+import edu.wpi.cscore.UsbCamera;
+import edu.wpi.first.wpilibj.CameraServer;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.IterativeRobot;
 import edu.wpi.first.wpilibj.Joystick;
@@ -10,6 +14,7 @@ import edu.wpi.first.wpilibj.PowerDistributionPanel;
 import edu.wpi.first.wpilibj.RobotDrive;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.vision.VisionThread;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -31,6 +36,19 @@ public class Robot extends IterativeRobot {
 	DoubleSolenoid shifter;
 	PowerDistributionPanel pdp;
 	boolean highGear;
+
+	private static final int IMG_WIDTH = 640;
+	private static final int IMG_HEIGHT = 480;
+	private static final int IMG_FOV = 60;
+
+	private VisionThread visionThread;
+	private double centerX = 0.0;
+	private RobotDrive drive;
+	private int contours;
+
+	private Rect r, r2;
+
+	private final Object imgLock = new Object();
 
 	/**
 	 * This function is run when the robot is first started up and should be
@@ -55,6 +73,25 @@ public class Robot extends IterativeRobot {
 		// pneumatics = new Pneumatics();
 		shifter = new DoubleSolenoid(0, 1);
 		highGear = false;
+
+		UsbCamera camera = CameraServer.getInstance().startAutomaticCapture();
+		// CameraServer.getInstance().getVideo();
+		camera.setResolution(IMG_WIDTH, IMG_HEIGHT);
+
+		visionThread = new VisionThread(camera, new Pipeline(), pipeline -> {
+			if (!pipeline.filterContoursOutput().isEmpty()) {
+				r = Imgproc.boundingRect(pipeline.filterContoursOutput().get(0));
+				r2 = Imgproc.boundingRect(pipeline.filterContoursOutput().get(0));
+				contours = pipeline.filterContoursOutput().size();
+				synchronized (imgLock) {
+					int centerL = r.x + (r.width / 2);
+					int centerR = r2.x + (r2.width / 2);
+					centerX = (centerL + centerR) / 2;
+				}
+			}
+		});
+		visionThread.start();
+
 	}
 
 	/**
@@ -101,6 +138,7 @@ public class Robot extends IterativeRobot {
 	public void teleopPeriodic() {
 
 		driveTrain.tankDrive(joy1, joy2, true);
+
 		if (joy1.getTrigger() == true) {
 			shifter.set(DoubleSolenoid.Value.kForward);
 			highGear = true;
@@ -115,6 +153,18 @@ public class Robot extends IterativeRobot {
 		// pneumatics.compressor.getPressureSwitchValue());
 		// SmartDashboard.putBoolean("Compressor",
 		// pneumatics.compressor.enabled());
+		/*
+		 * double centerX; Rect newR; synchronized (imgLock) { centerX =
+		 * this.centerX; newR = this.r; } double turn = centerX - (IMG_WIDTH /
+		 * 2); double c = 3500.0 / newR.height; double inchesPerPixel = 5.0 /
+		 * newR.height; double b = turn * inchesPerPixel; double a = Math.sqrt(c
+		 * * c - b * b); System.out.println("turn: " + turn + ", centerX: " +
+		 * centerX); System.out.println("rect: " + newR.toString());
+		 * System.out.println("Size: " + contours);
+		 * System.out.println("True Distance: " + c + "X distance: " + b +
+		 * "Y distance" + a); if (joy1.getTrigger()) {
+		 * driveTrain.arcadeDrive(.5, turn * .005); }
+		 */
 
 	}
 
@@ -123,6 +173,14 @@ public class Robot extends IterativeRobot {
 	 */
 	@Override
 	public void testPeriodic() {
+		double centerX;
+		Rect newR;
+		synchronized (imgLock) {
+			centerX = this.centerX;
+			newR = this.r;
+		}
+		double turn = centerX - (IMG_WIDTH / 2);
+
 	}
 
 	public void talonsToDashboard() {

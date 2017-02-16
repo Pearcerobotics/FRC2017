@@ -112,30 +112,97 @@ public class Robot extends IterativeRobot
     public void teleopPeriodic()
     {
         double[] heights, centers;
-        heights = table.getNumberArray("height", new double[]
-        { -1 });
-        centers = table.getNumberArray("centerX", new double[]
-        { -1 });
+        heights = table.getNumberArray("height", new double[] { -1 });
+        centers = table.getNumberArray("centerX", new double[] { -1 });
         double centerX = 320;
         double distance = 0;
         if (centers.length >= 2 && heights.length >= 2)
         {
             centerX = (centers[0] + centers[1]) / 2;
-            distance = 3500.0 / heights[0];
-            System.out.println("Distance: " + 3500 / ((heights[0] + heights[1]) / 2));
+            distance = 3500 / ((heights[0] + heights[1]) / 2);
+            System.out.println("Distance: " + distance);
         }
         if (centers.length == 1)
         {
             centerX = centers[0];
-            try
-            {
-                System.out.println("Distance: " + 3500 / heights[0]);
-            }
-            catch (Exception e)
-            {
-            }
+            distance = 3500 / heights[0];
+            System.out.println("Distance: " + distance);
         }
+
         double turn = (centerX - IMG_WIDTH / 2);
+
+        // Code from Nathan to determine distance and angle to the target
+        // constants
+        final double HORIZONTAL_FIELD_OF_VIEW = 50.6496; // degrees (also found
+                                                         // 59.7, we should
+                                                         // calibrate)
+        final double VERTICAL_FIELD_OF_VIEW = 39.3072; // degrees TODO calibrate
+        final double DEGREES_TO_RADIANS = 0.01745329252;
+        final double RADIANS_TO_DEGREES = 57.295779513;
+        final double TARGET_HEIGHT_INCHES = 7.0; // inches
+        final double TARGET_WIDTH_INCHES = 2.0; // inches
+        final double TARGET_W_T_H_NORMAL = TARGET_WIDTH_INCHES / TARGET_HEIGHT_INCHES;
+        final double MINIMUM_TURN_ANGLE = 5.0; // degrees
+
+        // calculations
+        double averageCenter = 0.0;
+        double averageHeight = 0.0;
+
+        // Get average center and height
+        if (centers.length >= 2)
+        {
+            averageCenter = centers[0] + centers[1] / 2.0;
+            averageHeight = heights[0] + heights[1] / 2.0;
+        }
+        else if (centers.length == 1)
+        {
+            averageCenter = centers[0];
+            averageHeight = heights[0];
+        }
+        else
+        {
+            // do nothing
+        }
+
+        double absoluteAngle = averageCenter / IMG_WIDTH * HORIZONTAL_FIELD_OF_VIEW;
+        double relativeAngle = absoluteAngle - HORIZONTAL_FIELD_OF_VIEW / 2.0;
+
+        System.out.println("Relative Angle from robot to target (degrees): " + relativeAngle);
+
+        double distanceCalculationFRC = TARGET_HEIGHT_INCHES * IMG_HEIGHT
+                / (2 * averageHeight * Math.tan((VERTICAL_FIELD_OF_VIEW / 2) * DEGREES_TO_RADIANS));
+
+        System.out.println("Distance from robot to target (inches): " + distanceCalculationFRC);
+
+        // experimental code to find angle of target with respect to robot
+        double[] widths;
+        widths = table.getNumberArray("width", new double[] { -1 });
+        double averageWtH = -1.0;
+        if (widths.length >= 2)
+        {
+            averageWtH = ((widths[0] / heights[0]) + (widths[1] / heights[2])) / 2.0;
+        }
+        else if (centers.length == 1)
+        {
+            averageWtH = (widths[0] / heights[0]);
+        }
+        else
+        {
+            // do nothing
+        }
+        System.out.println("Average width to height ratio: " + averageWtH);
+
+        // rough calculation
+        double roughAngleMeasurement = averageWtH / TARGET_W_T_H_NORMAL;
+
+        double amountToTurn = (1 - roughAngleMeasurement) * HORIZONTAL_FIELD_OF_VIEW;
+
+        if (amountToTurn < MINIMUM_TURN_ANGLE)
+        {
+            amountToTurn = 0.0;
+        }
+
+        System.out.println("!!NathanDrive!! turn: " + amountToTurn);
 
         System.out.println("Turn: " + turn + " CenterX: " + centerX);
         if (joy1.getTrigger())

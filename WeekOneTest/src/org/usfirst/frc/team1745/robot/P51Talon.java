@@ -15,7 +15,7 @@ public class P51Talon extends CANTalon implements Sendable {
 	private int myPdpPort;
 
 	public enum Motors {
-		WC775Pro, miniCIM, CIM
+		WC775Pro, miniCIM, CIM, bag
 	};
 
 	private Motors myMotor;

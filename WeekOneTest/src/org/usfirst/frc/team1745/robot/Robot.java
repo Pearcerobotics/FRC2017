@@ -33,16 +33,16 @@ public class Robot extends IterativeRobot
     final String customAuto = "My Auto";
     String autoSelected;
     SendableChooser<String> chooser = new SendableChooser<String>();
-    P51Talon LFDrive, RFDrive, LMDrive, RMDrive, LBDrive, RBDrive, gearIntakeMotor, leftConveyorSpinner, rightConveyerSpinner,
-            lifter;
+    P51Talon LFDrive, RFDrive, LMDrive, RMDrive, LBDrive, RBDrive, gearIntakeMotor, leftConveyorSpinner,
+            rightConveyerSpinner, lifter;
     RobotDrive driveTrain;
     BallShifter rightDrive, leftDrive;
     Joystick joy1, joy2, joy3;
     DoubleSolenoid shifter; // Reverse is low gear, forward is high gear
     DoubleSolenoid armRotatingPistons; // Reverse is the flat on the ground
-                                       // position, forward is 90 degree upright
+    // position, forward is 90 degree upright
     DoubleSolenoid gearCompressingPistons; // Reverse is clamping the gear,
-                                           // forward is open to receive a gear
+    // forward is open to receive a gear
     PowerDistributionPanel pdp;
     boolean highGear;
     DigitalInput frontBeam, backBeam;
@@ -128,13 +128,13 @@ public class Robot extends IterativeRobot
     {
         switch (this.autoSelected)
         {
-            case customAuto:
-                // Put custom auto code here
-                break;
-            case defaultAuto:
-            default:
-                // Put default auto code here
-                break;
+        case customAuto:
+            // Put custom auto code here
+            break;
+        case defaultAuto:
+        default:
+            // Put default auto code here
+            break;
         }
     }
 
@@ -152,7 +152,9 @@ public class Robot extends IterativeRobot
     @Override
     public void teleopPeriodic()
     {
+        SmartDashboard.putBoolean("Beam Sensor", frontBeam.get());
         SmartDashboard.putNumber("Ultrasound Distance", this.ultrasonicSensor.getVoltage() / SONIC_RATE);
+        SmartDashboard.putNumber("Ultrasound Voltage", this.ultrasonicSensor.getVoltage());
         manageStates();
         actOnState();
         pullTables();
@@ -235,71 +237,73 @@ public class Robot extends IterativeRobot
     {
         switch (this.gearGrabberMode)
         {
-            case INTAKE:
-            {
-                this.gearIntakeMotor.set(1);
-                this.gearCompressingPistons.set(DoubleSolenoid.Value.kForward);
-                this.armRotatingPistons.set(DoubleSolenoid.Value.kReverse);
-                this.leftConveyorSpinner.set(-0.5);
-                this.rightConveyerSpinner.set(0.5);
+        case INTAKE:
+        {
+            this.gearIntakeMotor.set(1);
+            this.gearCompressingPistons.set(DoubleSolenoid.Value.kForward);
+            this.armRotatingPistons.set(DoubleSolenoid.Value.kReverse);
+            this.leftConveyorSpinner.set(-0.5);
+            this.rightConveyerSpinner.set(0.5);
 
-                if (!this.frontBeam.get())
+            if (!this.frontBeam.get())
+            {
+                if (!this.isInWaitingMode)
                 {
-                    if (!this.isInWaitingMode)
-                    {
-                        this.grabbedTime = System.currentTimeMillis();
-                        this.isInWaitingMode = true;
-                    }
-                    this.gearCompressingPistons.set(DoubleSolenoid.Value.kReverse);
-                    if (System.currentTimeMillis() >= this.grabbedTime + 1000)
-                    {
-                        this.gearIntakeMotor.set(0);
-                    }
+                    this.grabbedTime = System.currentTimeMillis();
+                    this.isInWaitingMode = true;
                 }
-                break;
-            }
-            case HOLDING:
-            {
-                this.gearIntakeMotor.set(0);
-                this.leftConveyorSpinner.set(0);
-                this.rightConveyerSpinner.set(0);
-                this.armRotatingPistons.set(DoubleSolenoid.Value.kReverse);
-                this.gearCompressingPistons.set(DoubleSolenoid.Value.kForward);
-                break;
-            }
-            case PLACING:
-            {
-                this.gearIntakeMotor.set(0);
-                this.leftConveyorSpinner.set(0);
-                this.rightConveyerSpinner.set(0);
-                this.armRotatingPistons.set(DoubleSolenoid.Value.kForward);
                 this.gearCompressingPistons.set(DoubleSolenoid.Value.kReverse);
-                break;
+                if (System.currentTimeMillis() >= this.grabbedTime + 1000)
+                {
+                    this.gearIntakeMotor.set(0);
+                }
             }
-            case EJECTING:
-            {
-                // TODO if we put the piston sensors back on, we can know our
-                // position and know if we should lower the arm rotating piston
-                this.gearIntakeMotor.set(-1);
-                this.armRotatingPistons.set(DoubleSolenoid.Value.kForward);
-                this.gearCompressingPistons.set(DoubleSolenoid.Value.kReverse);
-                this.leftConveyorSpinner.set(-0.5);
-                this.rightConveyerSpinner.set(0.5);
-                break;
-            }
-            default:
-            {
-                // throw an error
-                System.err.println("somehow hit the default case, not good");
-                break;
-            }
+            break;
+        }
+        case HOLDING:
+        {
+            this.gearIntakeMotor.set(0);
+            this.leftConveyorSpinner.set(0);
+            this.rightConveyerSpinner.set(0);
+            this.armRotatingPistons.set(DoubleSolenoid.Value.kForward);
+            this.gearCompressingPistons.set(DoubleSolenoid.Value.kReverse);
+            break;
+        }
+        case PLACING:
+        {
+            this.gearIntakeMotor.set(0);
+            this.leftConveyorSpinner.set(0);
+            this.rightConveyerSpinner.set(0);
+            this.armRotatingPistons.set(DoubleSolenoid.Value.kReverse);
+            this.gearCompressingPistons.set(DoubleSolenoid.Value.kForward);
+            break;
+        }
+        case EJECTING:
+        {
+            // TODO if we put the piston sensors back on, we can know our
+            // position and know if we should lower the arm rotating piston
+            this.gearIntakeMotor.set(-1);
+            this.armRotatingPistons.set(DoubleSolenoid.Value.kReverse);
+            this.gearCompressingPistons.set(DoubleSolenoid.Value.kForward);
+            this.leftConveyorSpinner.set(-0.5);
+            this.rightConveyerSpinner.set(0.5);
+            break;
+        }
+        default:
+        {
+            // throw an error
+            System.err.println("somehow hit the default case, not good");
+            break;
+        }
         }
     }
 
     public void pullTables()
     {
-        this.heights = this.table.getNumberArray("height", new double[] { -1 });
-        this.centers = this.table.getNumberArray("centerX", new double[] { -1 });
+        this.heights = this.table.getNumberArray("height", new double[]
+        { -1 });
+        this.centers = this.table.getNumberArray("centerX", new double[]
+        { -1 });
     }
 
     /**
@@ -315,6 +319,8 @@ public class Robot extends IterativeRobot
     {
         this.LFDrive.toDashboard();
         this.RFDrive.toDashboard();
+        this.leftConveyorSpinner.toDashboard();
+        this.rightConveyerSpinner.toDashboard();
     }
 
     /**
@@ -376,7 +382,8 @@ public class Robot extends IterativeRobot
 
         // experimental code to find angle of target with respect to robot
         double[] widths;
-        widths = this.table.getNumberArray("width", new double[] { -1 });
+        widths = this.table.getNumberArray("width", new double[]
+        { -1 });
         double averageWtH = -1.0;
 
         boolean isWidthToHeightValid = false;
